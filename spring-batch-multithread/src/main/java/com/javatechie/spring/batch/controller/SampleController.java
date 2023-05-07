@@ -12,40 +12,46 @@ import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteExcep
 import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @RestController
-public class BatchJobController {
+public class SampleController {
 
-    @Autowired
-    private JobLauncher jobLauncher;
-
-    @Autowired
-    private Job job;
 
     @Autowired
     private CustomerRepository repository;
 
-    @GetMapping(path = "/importData")
-    public void startBatch() {
-        JobParameters jobParameters = new JobParametersBuilder()
-                .addLong("startAt", System.currentTimeMillis())
-                .addString("addStr","sajeeth")
-                .toJobParameters();
-        try {
-            jobLauncher.run(job, jobParameters);
-        } catch (JobExecutionAlreadyRunningException | JobRestartException
-                | JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
+    @GetMapping(path = "/insert")
+    public boolean startBatch() {
 
-            e.printStackTrace();
+        List<Customer> customerList=getCustomerList();
+
+        repository.saveAll(customerList);
+        return  true;
+    }
+
+
+    public List<Customer> getCustomerList()
+    {
+        List<Customer> customerList=new ArrayList<>();
+        String [] arr = {"M", "F"};
+
+        for(int i=1;i<300000;i++) {
+            customerList.add(Customer.builder()
+                    .age(String.valueOf(Math.floor(Math.random() *(60 - 20 + 1) + 20)))
+                    .contact("9666" + i)
+                    .email("sajeeth" + i + "@gmail.com")
+                    .empId(Long.valueOf(new Random().nextInt(10) + 1))
+                    .name("sajeeth"+i)
+                    .gender(arr[new Random().nextInt(arr.length)])
+                    .build());
         }
+        return customerList;
+
     }
 
-    @GetMapping("/customers")
-    public List<Customer> getAll(){
-        return repository.findAll();
-    }
 }

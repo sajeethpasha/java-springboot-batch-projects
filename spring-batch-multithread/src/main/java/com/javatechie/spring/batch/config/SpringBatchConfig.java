@@ -16,8 +16,12 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.step.skip.SkipPolicy;
+import org.springframework.batch.integration.async.AsyncItemProcessor;
+import org.springframework.batch.integration.async.AsyncItemWriter;
+import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
+import org.springframework.batch.item.database.builder.JdbcPagingItemReaderBuilder;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.FlatFileItemWriter;
 import org.springframework.batch.item.file.LineMapper;
@@ -35,6 +39,10 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import javax.sql.DataSource;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
 @EnableBatchProcessing
@@ -45,69 +53,38 @@ public class SpringBatchConfig {
 
     private StepBuilderFactory stepBuilderFactory;
 
-//    private CustomerRepository customerRepository;
-
-//    private CustomerItemWriter customerItemWriter;
-
-//    private  CustomerItemReader customerItemReader;
-
-    //private  CustomerProcessor customerProcessor;
 
     private DataSource dataSource;
 
-//    private CustomerMapper customerMapper;
-
-//    @Bean
-//    public FlatFileItemReader<Customer> itemReader() {
-//        FlatFileItemReader<Customer> flatFileItemReader = new FlatFileItemReader<>();
-//        flatFileItemReader.setResource(new FileSystemResource("src/main/resources/customers.csv"));
-//        flatFileItemReader.setName("CSV-Reader");
-//        flatFileItemReader.setLinesToSkip(1);
-//        flatFileItemReader.setLineMapper(lineMapper());
-//        return flatFileItemReader;
-//    }
-
-    //    private LineMapper<Customer> lineMapper() {
-//        DefaultLineMapper<Customer> lineMapper = new DefaultLineMapper<>();
-//
-//        DelimitedLineTokenizer lineTokenizer = new DelimitedLineTokenizer();
-//        lineTokenizer.setDelimiter(",");
-//        lineTokenizer.setStrict(false);
-//        lineTokenizer.setNames("id", "firstName", "lastName", "email", "gender", "contactNo", "country", "dob", "age");
-//
-//        BeanWrapperFieldSetMapper<Customer> fieldSetMapper = new BeanWrapperFieldSetMapper<>();
-//        fieldSetMapper.setTargetType(Customer.class);
-//
-//        lineMapper.setLineTokenizer(lineTokenizer);
-//        lineMapper.setFieldSetMapper(fieldSetMapper);
-//
-//        return lineMapper;
-//    }
-//
     @Bean
     public CustomerProcessor processor() {
         return new CustomerProcessor();
     }
 
-//    @Bean
-//    public RepositoryItemWriter<Customer> writer() {
-//        RepositoryItemWriter<Customer> writer = new RepositoryItemWriter<>();
-//        writer.setRepository(customerRepository);
-//        writer.setMethodName("save");
-//        return writer;
-//    }
 
     @Bean
     public JdbcCursorItemReader<CustomerEmployData> jdbcCursorItemReader() {
-        String sqlQuery = "SELECT c.id,c.age,c.contact,c.email,c.gender,c.name,e.designation,e.salary FROM batch_db_to_csv.customer_info c join batch_db_to_csv.employ_data e on c.id = e.id";
+        String sqlQuery = "SELECT c.id,c.age,c.contact,c.email,c.gender,c.name,e.designation,e.salary FROM batch_db_to_csv.customer_info c  left join batch_db_to_csv.employ_data e  on c.employ_id = e.id";
 
         System.out.println("jdbcCursorItemReader is called.");
         JdbcCursorItemReader<CustomerEmployData> jdbcCursorItemReader = new JdbcCursorItemReader<>();
         jdbcCursorItemReader.setDataSource(dataSource);
         jdbcCursorItemReader.setSql(sqlQuery);
+//        jdbcCursorItemReader.setFetchSize(5000);
         jdbcCursorItemReader.setRowMapper(getCustomerMapper());
         return jdbcCursorItemReader;
     }
+
+//    @Bean
+//    public ItemReader<CustomerEmployData> asyncReader(DataSource dataSource) {
+//
+//        return new JdbcPagingItemReaderBuilder<CustomerEmployData>()
+//                .name("Reader")
+//                .dataSource(dataSource)
+//                .selectClause("SELECT c.id,c.age,c.contact,c.email,c.gender,c.name,e.designation,e.salary FROM batch_db_to_csv.customer_info c  left join batch_db_to_csv.employ_data e  on c.employ_id = e.id")
+//                .rowMapper(getCustomerMapper())
+//                .build();
+//    }
 
 
     @Bean
@@ -121,7 +98,7 @@ public class SpringBatchConfig {
         FlatFileItemWriter<CustomerEmployData> flatFileItemWriter =
                 new FlatFileItemWriter<>();
 
-        flatFileItemWriter.setResource(new FileSystemResource("E://data//student.csv"));
+        flatFileItemWriter.setResource(new FileSystemResource("E://data//student"+new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(new Date())+".csv"));
         flatFileItemWriter.setLineAggregator(new DelimitedLineAggregator<CustomerEmployData>() {{
                     setDelimiter(",");
                     setFieldExtractor(new BeanWrapperFieldExtractor<CustomerEmployData>() {{
@@ -142,37 +119,35 @@ public class SpringBatchConfig {
 //    }
 
     @Bean
-    public Step step1() {
-        return stepBuilderFactory.get("slaveStep")
+    public Step stepSync() {
+        return stepBuilderFactory.get("sync")
 
-                .<CustomerEmployData, CustomerEmployData>chunk(3)
+                .<CustomerEmployData,CustomerEmployData>chunk(1000)
                 .reader(jdbcCursorItemReader())
                 .processor(processor())
                 .writer(flatFileItemWriter())
-                //.taskExecutor(TaskExecutor())
-              //  .taskExecutor(simpleTaskExecutor())
-//                .faultTolerant()
-//                //.skipLimit(100)
-//                //.skip(NumberFormatException.class)
-//                //.noSkip(IllegalArgumentException.class)
-//                .listener(skipListener())
-//                .skipPolicy(skipPolicy())
-                .listener(stepExecutionListener())
+//                .taskExecutor(taskExecutor())
                 .build();
     }
 
-    public Step step2() {
-        return stepBuilderFactory.get("tasklet")
-                .tasklet(new SampleTasklet())
+    @Bean
+    public Step stepAsync() {
+        return stepBuilderFactory.get("Async")
+
+                .<CustomerEmployData, Future<CustomerEmployData>>chunk(1000)
+                .reader(jdbcCursorItemReader())
+                .processor(asyncProcessor())
+                .writer(asyncWriter())
+//                .taskExecutor(taskExecutor())
                 .build();
     }
 //
 
     @Bean
     public Job runJob() {
-        return jobBuilderFactory.get("importCustomer")
-                .flow(step1())
-//                .next(step2())
+        return jobBuilderFactory.get("importCustomerd")
+//                .flow(stepSync())
+                .flow(stepAsync())
                 .end().build();
     }
 
@@ -200,16 +175,6 @@ public class SpringBatchConfig {
     }
 
 
-    @Bean
-    public TaskExecutor TaskExecutor()
-    {
-        ThreadPoolTaskExecutor threadPoolTaskExecutor=new ThreadPoolTaskExecutor();
-        threadPoolTaskExecutor.setCorePoolSize( 1);
-        threadPoolTaskExecutor.setMaxPoolSize(1);
-        threadPoolTaskExecutor.setQueueCapacity(2);
-        threadPoolTaskExecutor.setThreadNamePrefix("Thread N-> :");
-        return threadPoolTaskExecutor;
-    }
 
     @Bean
     public UserJobExecutionNotificationListener jobExecutionListener() {
@@ -220,4 +185,35 @@ public class SpringBatchConfig {
     public UserStepCompleteNotificationListener stepExecutionListener() {
         return new UserStepCompleteNotificationListener();
     }
+
+
+
+    @Bean
+    public TaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(64);
+        executor.setMaxPoolSize(64);
+        executor.setQueueCapacity(64);
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setThreadNamePrefix("MultiThreaded-");
+        return executor;
+    }
+
+    @Bean
+    public AsyncItemProcessor<CustomerEmployData, CustomerEmployData> asyncProcessor() {
+        AsyncItemProcessor<CustomerEmployData, CustomerEmployData> asyncItemProcessor = new AsyncItemProcessor<>();
+        asyncItemProcessor.setDelegate(processor());
+        asyncItemProcessor.setTaskExecutor(taskExecutor());
+
+        return asyncItemProcessor;
+    }
+
+    @Bean
+    public AsyncItemWriter<CustomerEmployData> asyncWriter() {
+        AsyncItemWriter<CustomerEmployData> asyncItemWriter = new AsyncItemWriter<>();
+        asyncItemWriter.setDelegate(flatFileItemWriter());
+        return asyncItemWriter;
+    }
+
+
 }

@@ -10,7 +10,7 @@ public class CustomerProcessor implements ItemProcessor<CustomerEmployData, Cust
 
     @Override
     public CustomerEmployData process(CustomerEmployData customer) {
-        System.out.println("process method called.."+customer.toString());
+//        System.out.println("process method called.."+customer.toString());
 //        int age = Integer.parseInt(customer.getAge());//vhjkdfh38497infdhg
 //        if (age >= 18) {
 //            return customer;
