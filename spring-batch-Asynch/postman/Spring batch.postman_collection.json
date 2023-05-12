@@ -1,0 +1,100 @@
+{
+	"info": {
+		"_postman_id": "6ddfb368-03f6-4aa5-a545-a10b363ddc4b",
+		"name": "Spring batch",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "DB-To-File",
+			"item": [
+				{
+					"name": "New Request",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8081/importData?filename=saleem",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8081",
+							"path": [
+								"importData"
+							],
+							"query": [
+								{
+									"key": "filename",
+									"value": "saleem"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "insert",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://127.0.0.1:8081/insert",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8081",
+							"path": [
+								"insert"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "id",
+							"value": "4",
+							"type": "default"
+						},
+						{
+							"key": "name",
+							"value": "dfsa",
+							"type": "default"
+						}
+					]
+				},
+				"url": {
+					"raw": "127.0.0.1:4555/check",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "4555",
+					"path": [
+						"check"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

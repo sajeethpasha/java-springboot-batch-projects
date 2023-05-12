@@ -1,4 +1,4 @@
-package com.javatechie.spring.batch.config;
+package com.javatechie.spring.batch.config.Customoer;
 
 import com.javatechie.spring.batch.entity.Customer;
 import com.javatechie.spring.batch.model.CustomerEmployData;

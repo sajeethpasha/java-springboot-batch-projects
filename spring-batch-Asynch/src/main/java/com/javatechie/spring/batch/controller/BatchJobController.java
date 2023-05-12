@@ -30,10 +30,11 @@ public class BatchJobController {
     private CustomerRepository repository;
 
     @GetMapping(path = "/importData")
-    public void startBatch() {
+    public void startBatch(String filename) {
         JobParameters jobParameters = new JobParametersBuilder()
                 .addLong("startAt", System.currentTimeMillis())
-                .addString("addStr","sajeeth")
+//                .addString("addStr","sajeeth")
+                .addString("addStr",filename,true)
                 .toJobParameters();
         try {
             jobLauncher.run(job, jobParameters);
