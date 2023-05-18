@@ -1,6 +1,8 @@
 package com.javatechie.spring.batch.controller;
 
 import com.javatechie.spring.batch.entity.Customer;
+import com.javatechie.spring.batch.model.CustomJobParameter;
+import com.javatechie.spring.batch.model.JobParamsModel;
 import com.javatechie.spring.batch.repository.CustomerRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameters;
@@ -31,13 +33,21 @@ public class BatchJobController {
 
     @GetMapping(path = "/importData")
     public void startBatch(String filename) {
-        JobParameters jobParameters = new JobParametersBuilder()
-                .addLong("startAt", System.currentTimeMillis())
-//                .addString("addStr","sajeeth")
-                .addString("addStr",filename,true)
+        JobParamsModel jobParamsModel=new JobParamsModel();
+        jobParamsModel.setName("sajeeth");
+
+        JobParameters paramJobParameters =new JobParametersBuilder()
+                .addParameter("customparam",new CustomJobParameter<JobParamsModel>(jobParamsModel))
                 .toJobParameters();
+
+//        JobParameters jobParameters = new JobParametersBuilder()
+//                .addLong("startAt", System.currentTimeMillis())
+////                .addString("addStr","sajeeth")
+//                .addString("addStr",filename,true)
+//                .addParameter("data" ,paramJobParameters)
+//                .toJobParameters();
         try {
-            jobLauncher.run(job, jobParameters);
+            jobLauncher.run(job, paramJobParameters);
         } catch (JobExecutionAlreadyRunningException | JobRestartException
                 | JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
 

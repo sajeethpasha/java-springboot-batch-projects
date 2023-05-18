@@ -12,6 +12,7 @@ import com.javatechie.spring.batch.listener.UserJobExecutionNotificationListener
 import com.javatechie.spring.batch.listener.UserStepCompleteNotificationListener;
 import com.javatechie.spring.batch.misc.CustomerMapper;
 import com.javatechie.spring.batch.model.CustomerEmployData;
+import com.javatechie.spring.batch.model.JobParamsModel;
 import lombok.AllArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.SkipListener;
@@ -335,7 +336,7 @@ public class SpringBatchConfig {
     @Bean
     public Step stepCustProdAsync() {
         return stepBuilderFactory.get("AsyncStep")
-                .<CustomerEmployData, Future<CustomerEmployData>>chunk(100)
+                .<CustomerEmployData, Future<CustomerEmployData>>chunk(5)
                 .reader(jdbcCursorItemCustProdReader())
                 .processor(asyncCustProdProcessor())
                 .writer(asyncCustProdWriter())
@@ -352,7 +353,7 @@ public class SpringBatchConfig {
 
     @Bean
     public JdbcCursorItemReader<CustomerEmployData> jdbcCursorItemCustProdReader() {
-        String sqlQuery = "SELECT c.id,c.age,c.contact,c.email,c.gender,c.name,e.designation,e.salary FROM batch_db_to_csv.customer_info c  left join batch_db_to_csv.employ_data e  on c.employ_id = e.id limit 25";
+        String sqlQuery = "SELECT c.id,c.age,c.contact,c.email,c.gender,c.name,e.designation,e.salary FROM batch_db_to_csv.customer_info c  left join batch_db_to_csv.employ_data e  on c.employ_id = e.id limit 100";
 
         System.out.println("jdbcCursorItemReader is called.");
         JdbcCursorItemReader<CustomerEmployData> jdbcCursorItemReader = new JdbcCursorItemReader<>();
@@ -384,9 +385,9 @@ public class SpringBatchConfig {
     // writter
     @Bean
     @StepScope
-    public CustProdItemWriter getCustomItemCustProdWriter( @Value("#{jobParameters['addStr']}") String fileName) {
-        System.out.println("fileName:"+fileName);
-        return new CustProdItemWriter(fileName);
+    public CustProdItemWriter getCustomItemCustProdWriter( @Value("#{jobParameters['customparam']}") JobParamsModel fileName) {
+        System.out.println("customparam:"+fileName.toString());
+        return new CustProdItemWriter();
     }
 
     @Bean

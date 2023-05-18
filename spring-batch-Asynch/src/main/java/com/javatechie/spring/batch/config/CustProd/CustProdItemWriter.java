@@ -2,8 +2,13 @@ package com.javatechie.spring.batch.config.CustProd;
 
 import com.javatechie.spring.batch.model.CustomerEmployData;
 import com.javatechie.spring.batch.repository.CustomerRepository;
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParameter;
 import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,17 +32,27 @@ public class CustProdItemWriter implements ItemWriter<CustomerEmployData> {
 
     private String fileName;
 
-    public CustProdItemWriter(String fileName)
-    {
-     this.fileName=fileName;
-    }
+//    public CustProdItemWriter(String fileName)
+//    {
+//     //this.fileName=fileName;
+//    }
+
+    @Value("#{jobExecution}")
+    @Setter
+    @Getter
+    private JobExecution jobExecution;
 
 
 
     @Override
     public void write(List<? extends CustomerEmployData> list) throws Exception {
 
-        System.out.println("fileName in writter:"+fileName);
+
+        System.out.println(jobExecution.getExecutionContext());
+        ExecutionContext executionContext = new ExecutionContext();
+        executionContext.put("name", list.get(0).getAge());
+        jobExecution.setExecutionContext(executionContext);
+      //  System.out.println("fileName in writter:"+fileName);
 
         list.forEach(l->{
             System.out.println(l.toString());
